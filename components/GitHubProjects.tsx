@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { glassClasses } from './GlassEffects'
 
 interface GitHubRepo {
   id: number
@@ -140,7 +141,7 @@ export default function GitHubProjects({ username, maxRepos = 6 }: GitHubProject
         {[...Array(6)].map((_, index) => (
           <div 
             key={index}
-            className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50 animate-pulse"
+            className={`${glassClasses.glassDynamic} p-6 animate-pulse`}
           >
             <div className="h-4 bg-gray-700 rounded w-3/4 mb-4"></div>
             <div className="h-3 bg-gray-700 rounded w-full mb-2"></div>
@@ -162,12 +163,12 @@ export default function GitHubProjects({ username, maxRepos = 6 }: GitHubProject
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 max-w-md mx-auto">
+        <div className={`${glassClasses.glassPanel} border-red-500/30 p-6 max-w-md mx-auto`}>
           <h3 className="text-red-400 font-semibold mb-2">Error Loading Projects</h3>
           <p className="text-gray-400 text-sm mb-4">{error}</p>
           <button
             onClick={fetchRepositories}
-            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-lg transition-colors"
+            className={`${glassClasses.liquidButton} bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-lg transition-colors interactive`}
           >
             Try Again
           </button>
@@ -184,129 +185,130 @@ export default function GitHubProjects({ username, maxRepos = 6 }: GitHubProject
         return (
           <motion.div
             key={repo.id}
-            className="group relative bg-gray-900/50 backdrop-blur-xl rounded-xl overflow-hidden border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-500"
+            className="group relative"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
-            whileHover={{ y: -5 }}
+            whileHover={{ y: -8 }}
           >
-            {/* Holographic Effect */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              animate={{ 
-                background: [
-                  'linear-gradient(45deg, rgba(6,182,212,0.05), rgba(139,92,246,0.05), rgba(236,72,153,0.05))',
-                  'linear-gradient(45deg, rgba(139,92,246,0.05), rgba(236,72,153,0.05), rgba(6,182,212,0.05))',
-                  'linear-gradient(45deg, rgba(236,72,153,0.05), rgba(6,182,212,0.05), rgba(139,92,246,0.05))'
-                ]
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
+            <div className={`${glassClasses.morphCard} overflow-hidden interactive parallax-layer parallax-medium`}>
+              {/* Enhanced Holographic Effect */}
+              <motion.div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  background: `conic-gradient(from 0deg at 50% 50%, rgba(6,182,212,0.1), rgba(139,92,246,0.1), rgba(236,72,153,0.1), rgba(6,182,212,0.1))`
+                }}
+                animate={{ 
+                  rotate: 360
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              />
 
-            <div className="relative p-6">
-              {/* Repository Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors mb-2">
-                    {repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                    {repo.description || 'No description available'}
-                  </p>
-                </div>
-                
-                {/* GitHub Icon */}
-                <motion.a
-                  href={repo.html_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
-                </motion.a>
-              </div>
-
-              {/* Topics */}
-              {repo.topics.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {repo.topics.slice(0, 3).map((topic) => (
-                    <span
-                      key={topic}
-                      className="px-2 py-1 bg-cyan-500/10 text-cyan-400 rounded-full text-xs border border-cyan-500/20"
-                    >
-                      {topic}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Languages */}
-              {topLanguages.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    {topLanguages.map((lang) => (
-                      <div key={lang.name} className="flex items-center space-x-1">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: getLanguageColor(lang.name) }}
-                        />
-                        <span className="text-xs text-gray-400">
-                          {lang.name} {lang.percentage}%
-                        </span>
-                      </div>
-                    ))}
+              <div className="relative p-6 z-10">
+                {/* Repository Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors mb-2 filter drop-shadow-sm">
+                      {repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </h3>
+                    <p className="text-gray-300 text-sm leading-relaxed filter drop-shadow-sm">
+                      {repo.description || 'No description available'}
+                    </p>
                   </div>
-                </div>
-              )}
-
-              {/* Stats */}
-              <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                    <span>{repo.stargazers_count}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                    </svg>
-                    <span>{repo.forks_count}</span>
-                  </div>
-                </div>
-                <span className="text-xs">{formatDate(repo.updated_at)}</span>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-3">
-                <motion.a
-                  href={repo.html_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-cyan-400 px-4 py-2 rounded-lg text-sm font-medium text-center transition-all duration-300 border border-cyan-500/30"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  View Code
-                </motion.a>
-                {repo.homepage && (
+                  
+                  {/* Enhanced GitHub Icon */}
                   <motion.a
-                    href={repo.homepage}
+                    href={repo.html_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 border border-gray-600 text-gray-300 hover:text-white hover:border-gray-500 px-4 py-2 rounded-lg text-sm font-medium text-center transition-all duration-300"
+                    className={`text-gray-400 hover:text-white transition-colors ${glassClasses.glass} p-2 rounded-full interactive`}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                    </svg>
+                  </motion.a>
+                </div>
+
+                {/* Enhanced Topics */}
+                {repo.topics.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {repo.topics.slice(0, 3).map((topic) => (
+                      <span
+                        key={topic}
+                        className={`px-3 py-1 ${glassClasses.glass} text-cyan-400 rounded-full text-xs border border-cyan-500/20 filter drop-shadow-sm`}
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Enhanced Languages */}
+                {topLanguages.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex items-center space-x-3 mb-2">
+                      {topLanguages.map((lang) => (
+                        <div key={lang.name} className="flex items-center space-x-1">
+                          <div 
+                            className="w-3 h-3 rounded-full shadow-lg border border-white/20" 
+                            style={{ backgroundColor: getLanguageColor(lang.name) }}
+                          />
+                          <span className="text-xs text-gray-300 filter drop-shadow-sm">
+                            {lang.name} {lang.percentage}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Enhanced Stats */}
+                <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      <span className="filter drop-shadow-sm">{repo.stargazers_count}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                      </svg>
+                      <span className="filter drop-shadow-sm">{repo.forks_count}</span>
+                    </div>
+                  </div>
+                  <span className="text-xs filter drop-shadow-sm">{formatDate(repo.updated_at)}</span>
+                </div>
+
+                {/* Enhanced Action Buttons */}
+                <div className="flex space-x-3">
+                  <motion.a
+                    href={repo.html_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex-1 ${glassClasses.liquidButton} text-cyan-400 px-4 py-2 rounded-lg text-sm font-medium text-center transition-all duration-300 border border-cyan-500/30 interactive`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Live Demo
+                    View Code
                   </motion.a>
-                )}
+                  {repo.homepage && (
+                    <motion.a
+                      href={repo.homepage}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex-1 ${glassClasses.neomorphic} text-gray-300 hover:text-white px-4 py-2 rounded-lg text-sm font-medium text-center transition-all duration-300 interactive`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Live Demo
+                    </motion.a>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>

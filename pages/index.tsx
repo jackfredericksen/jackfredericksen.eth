@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import GitHubProjects from '../components/GitHubProjects'
+import GlassEffects, { glassClasses } from '../components/GlassEffects'
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
@@ -18,234 +19,281 @@ export default function Home() {
   if (!mounted) return null
 
   return (
-    <div className="relative min-h-screen bg-black text-white overflow-hidden">
-      {/* Animated Grid Background */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.1)_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-cyan-900/20" />
-      </div>
+    <>
+      <GlassEffects />
+      <div className="relative min-h-screen bg-black text-white overflow-hidden">
+        {/* Enhanced Animated Grid Background */}
+        <div className="fixed inset-0 z-0">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.08)_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(6,182,212,0.15)_0%,transparent_50%),radial-gradient(circle_at_80%_20%,rgba(139,92,246,0.15)_0%,transparent_50%),radial-gradient(circle_at_40%_40%,rgba(236,72,153,0.1)_0%,transparent_50%)]" />
+        </div>
 
-      <div className="relative z-10">
-        {/* Hero Section */}
-        <section className="min-h-screen flex items-center justify-center px-4">
-          <motion.div style={{ y: y1, opacity }} className="text-center max-w-4xl mx-auto">
-            {/* Animated Avatar */}
-            <motion.div
-              className="relative mx-auto mb-8"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
+        <div className="relative z-10">
+          {/* Hero Section with Glass Effects */}
+          <section className="min-h-screen flex items-center justify-center px-4">
+            <motion.div 
+              style={{ y: y1, opacity }} 
+              className="text-center max-w-4xl mx-auto parallax-layer parallax-slow"
             >
-              <div className="w-32 h-32 mx-auto relative">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-spin-slow" />
-                <div className="absolute inset-2 rounded-full bg-black flex items-center justify-center">
-                  <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                    JF
-                  </span>
-                </div>
-              </div>
-              {/* Floating Particles */}
-              {[...Array(6)].map((_, i) => (
+              {/* Glass Container for Hero Content */}
+              <div className={`${glassClasses.glassPanel} p-12 mb-8`}>
+                {/* Animated Avatar with Glass Effect */}
                 <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 bg-cyan-400 rounded-full"
-                  style={{
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                  }}
-                  animate={{
-                    y: [0, -20, 0],
-                    opacity: [0, 1, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    delay: i * 0.3,
-                  }}
-                />
-              ))}
-            </motion.div>
-
-            {/* Main Title */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-            >
-              <h1 className="text-5xl md:text-7xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-                  Jack Fredericksen
-                </span>
-              </h1>
-              <motion.h2 
-                className="text-2xl md:text-3xl text-gray-300 mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 }}
-              >
-                Web3 Architect & Blockchain Developer
-              </motion.h2>
-            </motion.div>
-
-            {/* Typewriter Effect */}
-            <motion.div
-              className="h-12 mb-12"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.5 }}
-            >
-              <TypewriterText 
-                texts={[
-                  "Building the decentralized future",
-                  "Crafting immutable experiences", 
-                  "Deploying trustless protocols",
-                  "jackfredericksen.eth"
-                ]}
-              />
-            </motion.div>
-
-            {/* Social Links */}
-            <motion.div
-              className="flex justify-center space-x-6 mb-8"
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 2 }}
-            >
-              {[
-                { href: 'https://github.com/jackfredericksen', icon: 'github', label: 'GitHub' },
-                { href: 'https://twitter.com/0xJaxic', icon: 'twitter', label: 'Twitter' },
-                { href: 'mailto:jackfredericksen.eth@ethermail.io', icon: 'email', label: 'Email' },
-              ].map((social, index) => (
-                <motion.a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full bg-gradient-to-r from-gray-800/50 to-gray-700/50 backdrop-blur-xl border border-cyan-500/30 flex items-center justify-center hover:border-cyan-500/50 transition-all duration-300 group"
-                  whileHover={{ scale: 1.1, y: -5 }}
-                  whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.2 + index * 0.1 }}
+                  className="relative mx-auto mb-8"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
                 >
-                  <SocialIcon type={social.icon} />
-                  
-                  {/* Tooltip */}
-                  <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                    <div className="bg-black/80 backdrop-blur-sm text-white px-2 py-1 rounded text-xs whitespace-nowrap border border-cyan-500/30">
-                      {social.label}
+                  <div className="w-32 h-32 mx-auto relative">
+                    <div className={`absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 ${glassClasses.glassRefraction} animate-spin-slow`} />
+                    <div className="absolute inset-2 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                      <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                        JF
+                      </span>
                     </div>
                   </div>
-                </motion.a>
-              ))}
+                  
+                  {/* Enhanced Floating Particles */}
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-2 h-2 rounded-full"
+                      style={{
+                        background: `radial-gradient(circle, ${i % 3 === 0 ? 'rgba(6,182,212,0.8)' : i % 3 === 1 ? 'rgba(139,92,246,0.8)' : 'rgba(236,72,153,0.8)'} 0%, transparent 70%)`,
+                        top: `${Math.random() * 100}%`,
+                        left: `${Math.random() * 100}%`,
+                        backdropFilter: 'blur(1px)'
+                      }}
+                      animate={{
+                        y: [0, -30, 0],
+                        x: [0, Math.random() * 20 - 10, 0],
+                        opacity: [0, 1, 0],
+                        scale: [0.5, 1, 0.5],
+                      }}
+                      transition={{
+                        duration: 3 + Math.random() * 2,
+                        repeat: Infinity,
+                        delay: i * 0.4,
+                      }}
+                    />
+                  ))}
+                </motion.div>
+
+                {/* Enhanced Main Title with Glass Text Effect */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  className="parallax-layer parallax-medium"
+                >
+                  <h1 className="text-5xl md:text-7xl font-bold mb-6 relative">
+                    <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent filter drop-shadow-lg">
+                      Jack Fredericksen
+                    </span>
+                    {/* Glass reflection effect */}
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent bg-clip-text text-transparent"
+                      animate={{
+                        x: ['-100%', '100%'],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        repeatDelay: 2,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      Jack Fredericksen
+                    </motion.span>
+                  </h1>
+                  
+                  <motion.h2 
+                    className="text-2xl md:text-3xl text-gray-300 mb-8 parallax-layer parallax-fast"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.2 }}
+                  >
+                    Web3 Architect & Blockchain Developer
+                  </motion.h2>
+                </motion.div>
+
+                {/* Enhanced Typewriter Effect */}
+                <motion.div
+                  className="h-12 mb-12 parallax-layer parallax-medium"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.5 }}
+                >
+                  <TypewriterText 
+                    texts={[
+                      "Building the decentralized future",
+                      "Crafting immutable experiences", 
+                      "Deploying trustless protocols",
+                      "jackfredericksen.eth"
+                    ]}
+                  />
+                </motion.div>
+
+                {/* Glass Social Links */}
+                <motion.div
+                  className="flex justify-center space-x-6 mb-8"
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 2 }}
+                >
+                  {[
+                    { href: 'https://github.com/jackfredericksen', icon: 'github', label: 'GitHub' },
+                    { href: 'https://twitter.com/0xJaxic', icon: 'twitter', label: 'Twitter' },
+                    { href: 'mailto:jackfredericksen.eth@ethermail.io', icon: 'email', label: 'Email' },
+                  ].map((social, index) => (
+                    <motion.a
+                      key={social.label}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`w-14 h-14 rounded-full ${glassClasses.morphCard} flex items-center justify-center group interactive`}
+                      whileHover={{ scale: 1.1, y: -8 }}
+                      whileTap={{ scale: 0.9 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 2.2 + index * 0.1 }}
+                    >
+                      <SocialIcon type={social.icon} />
+                      
+                      {/* Enhanced Tooltip with Glass Effect */}
+                      <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                        <div className={`${glassClasses.glass} px-3 py-2 text-xs whitespace-nowrap`}>
+                          {social.label}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 rotate-45 bg-white/10 border-r border-b border-white/10" />
+                        </div>
+                      </div>
+                    </motion.a>
+                  ))}
+                </motion.div>
+
+                {/* Enhanced Contact Info with Glass Effect */}
+                <motion.div
+                  className="text-gray-400 text-sm parallax-layer parallax-slow"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 2.5 }}
+                >
+                  <p className="mb-2">Available for Web3 consulting & development projects</p>
+                  <motion.a
+                    href="mailto:jack@jackfredericksen.eth"
+                    className={`${glassClasses.liquidButton} text-cyan-400 hover:text-cyan-300 transition-colors px-4 py-2 rounded-full inline-block interactive`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    jackfredericksen.eth@ethermail.io
+                  </motion.a>
+                </motion.div>
+              </div>
             </motion.div>
 
-            {/* Quick Contact */}
+            {/* Enhanced Scroll Indicator with Glass Effect */}
             <motion.div
-              className="text-gray-400 text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2.5 }}
+              className="absolute bottom-8 left-1/2 transform -translate-x-1/2 parallax-layer parallax-fast"
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
             >
-              <p>Available for Web3 consulting & development projects</p>
-              <motion.a
-                href="mailto:jackfredericksen.eth@ethermail.io"
-                className="text-cyan-400 hover:text-cyan-300 transition-colors"
-                whileHover={{ scale: 1.05 }}
-              >
-                jackfredericksen.eth@ethermail.io
-              </motion.a>
+              <div className={`w-8 h-12 ${glassClasses.glass} rounded-full p-2`}>
+                <motion.div
+                  className="w-2 h-3 bg-gradient-to-b from-cyan-400 to-purple-600 rounded-full mx-auto"
+                  animate={{ y: [0, 16, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </div>
             </motion.div>
-          </motion.div>
+          </section>
 
-          {/* Scroll Indicator */}
-          <motion.div
-            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <div className="w-6 h-10 border-2 border-cyan-400 rounded-full p-1">
+          {/* Enhanced Projects Section */}
+          <section className="py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <motion.div
-                className="w-1 h-2 bg-cyan-400 rounded-full mx-auto"
-                animate={{ y: [0, 16, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
+                className="text-center mb-16 parallax-layer parallax-medium"
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <div className={`${glassClasses.glassPanel} p-8 inline-block`}>
+                  <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                    <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                      Latest Projects
+                    </span>
+                  </h2>
+                  <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+                    Open-source projects and contributions from my GitHub repositories
+                  </p>
+                </div>
+              </motion.div>
+
+              <div className="parallax-layer parallax-slow">
+                <GitHubProjects username="jackfredericksen" />
+              </div>
             </div>
-          </motion.div>
-        </section>
+          </section>
 
-        {/* Projects Section */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              className="text-center mb-16"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                Latest Projects
-              </h2>
-              <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-                Open-source projects and contributions from my GitHub repositories
-              </p>
-            </motion.div>
-
-            <GitHubProjects username="jackfredericksen" />
-          </div>
-        </section>
-
-        {/* Skills & Technologies */}
-        <section className="py-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.h2
-              className="text-4xl font-bold text-center mb-16 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
-              Technology Stack
-            </motion.h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { name: 'Solidity', level: 95, color: 'from-blue-400 to-blue-600' },
-                { name: 'React', level: 98, color: 'from-cyan-400 to-cyan-600' },
-                { name: 'Node.js', level: 92, color: 'from-green-400 to-green-600' },
-                { name: 'Web3.js', level: 94, color: 'from-purple-400 to-purple-600' },
-                { name: 'Next.js', level: 96, color: 'from-gray-400 to-gray-600' },
-                { name: 'TypeScript', level: 97, color: 'from-blue-500 to-blue-700' },
-                { name: 'IPFS', level: 88, color: 'from-indigo-400 to-indigo-600' },
-                { name: 'Ethereum', level: 92, color: 'from-yellow-400 to-yellow-600' },
-              ].map((skill, index) => (
-                <SkillCard key={skill.name} skill={skill} index={index} />
-              ))}
+          {/* Enhanced Skills & Technologies */}
+          <section className="py-20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                className="parallax-layer parallax-medium"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+              >
+                <div className={`${glassClasses.glassPanel} p-8 mb-16 text-center`}>
+                  <h2 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                    Technology Stack
+                  </h2>
+                </div>
+              </motion.div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 parallax-layer parallax-fast">
+                {[
+                  { name: 'Solidity', level: 95, color: 'from-blue-400 to-blue-600' },
+                  { name: 'React', level: 98, color: 'from-cyan-400 to-cyan-600' },
+                  { name: 'Node.js', level: 92, color: 'from-green-400 to-green-600' },
+                  { name: 'Web3.js', level: 94, color: 'from-purple-400 to-purple-600' },
+                  { name: 'Next.js', level: 96, color: 'from-gray-400 to-gray-600' },
+                  { name: 'TypeScript', level: 97, color: 'from-blue-500 to-blue-700' },
+                  { name: 'IPFS', level: 88, color: 'from-indigo-400 to-indigo-600' },
+                  { name: 'Ethereum', level: 92, color: 'from-yellow-400 to-yellow-600' },
+                ].map((skill, index) => (
+                  <SkillCard key={skill.name} skill={skill} index={index} />
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* Footer */}
-        <footer className="py-12 border-t border-gray-800">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
-              <p className="text-gray-400 mb-4">
-                Built with Next.js • Hosted on IPFS • Powered by Web3
-              </p>
-              <p className="text-sm text-gray-500">
-                © 2024 Jack Fredericksen. Open source on GitHub.
-              </p>
-            </motion.div>
-          </div>
-        </footer>
+          {/* Enhanced Footer */}
+          <footer className="py-12 border-t border-white/10">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <motion.div
+                className="parallax-layer parallax-slow"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+              >
+                <div className={`${glassClasses.neomorphic} p-8`}>
+                  <p className="text-gray-400 mb-4">
+                    Built with Next.js • Hosted on IPFS • Powered by Web3
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    © 2024 Jack Fredericksen. Open source on GitHub.
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </footer>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
-// Typewriter Component
+// Enhanced Typewriter Component with Glass Effects
 function TypewriterText({ texts }: { texts: string[] }) {
   const [currentText, setCurrentText] = useState('')
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -268,10 +316,10 @@ function TypewriterText({ texts }: { texts: string[] }) {
   }, [currentIndex, textIndex, texts])
 
   return (
-    <div className="text-lg md:text-xl font-mono text-cyan-300">
+    <div className={`text-lg md:text-xl font-mono text-cyan-300 ${glassClasses.glass} px-6 py-3 rounded-full inline-block`}>
       {currentText}
       <motion.span
-        className="inline-block w-3 h-6 bg-cyan-400 ml-1"
+        className="inline-block w-3 h-6 bg-gradient-to-b from-cyan-400 to-purple-600 ml-1 rounded-sm"
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.8, repeat: Infinity }}
       />
@@ -279,9 +327,9 @@ function TypewriterText({ texts }: { texts: string[] }) {
   )
 }
 
-// Social Icon Component
+// Enhanced Social Icon Component
 function SocialIcon({ type }: { type: string }) {
-  const iconClass = "w-5 h-5 text-gray-400 group-hover:text-cyan-400 transition-colors"
+  const iconClass = "w-6 h-6 text-gray-400 group-hover:text-cyan-400 transition-colors filter drop-shadow-lg"
   
   switch (type) {
     case 'github':
@@ -313,7 +361,7 @@ function SocialIcon({ type }: { type: string }) {
   }
 }
 
-// Skill Card Component
+// Enhanced Skill Card Component with Glass Effects
 function SkillCard({ skill, index }: { skill: any, index: number }) {
   return (
     <motion.div
@@ -324,18 +372,18 @@ function SkillCard({ skill, index }: { skill: any, index: number }) {
       transition={{ delay: index * 0.1 }}
       whileHover={{ y: -10, rotateY: 10 }}
     >
-      <div className="bg-gray-900/50 backdrop-blur-xl rounded-lg p-6 border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300">
-        <h3 className="font-semibold text-white mb-4">{skill.name}</h3>
-        <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+      <div className={`${glassClasses.morphCard} p-6 interactive`}>
+        <h3 className="font-semibold text-white mb-4 filter drop-shadow-sm">{skill.name}</h3>
+        <div className={`w-full ${glassClasses.neomorphic} rounded-full h-3 mb-2 p-1`}>
           <motion.div
-            className={`h-2 rounded-full bg-gradient-to-r ${skill.color}`}
+            className={`h-1 rounded-full bg-gradient-to-r ${skill.color} shadow-lg`}
             initial={{ width: 0 }}
             whileInView={{ width: `${skill.level}%` }}
             viewport={{ once: true }}
             transition={{ duration: 1.5, delay: index * 0.1 }}
           />
         </div>
-        <span className="text-sm text-gray-400">{skill.level}%</span>
+        <span className="text-sm text-gray-400 filter drop-shadow-sm">{skill.level}%</span>
       </div>
     </motion.div>
   )

@@ -325,7 +325,7 @@ function ProjectCard({ project, index, isHovered, onHover, onLeave }: {
           <div className="grid grid-cols-3 gap-4 mb-6">
             {Object.entries(project.metrics).map(([key, value]) => (
               <div key={key} className="text-center">
-                <div className="text-lg font-bold text-cyan-400">{value}</div>
+                <div className="text-lg font-bold text-cyan-400">{value as string}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">{key}</div>
               </div>
             ))}
