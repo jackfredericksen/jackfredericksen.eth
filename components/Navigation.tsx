@@ -8,6 +8,7 @@ const AdminInterface = dynamic(() => import('./AdminInterface'), { ssr: false })
 
 const navItems = [
   { href: '/', label: 'Genesis' },
+  { href: '/matrix', label: 'Matrix' },
   { href: '/moodboard', label: 'Vision' },
   { href: '/blog', label: 'Logs' },
 ]

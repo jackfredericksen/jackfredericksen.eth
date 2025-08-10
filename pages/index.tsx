@@ -143,7 +143,7 @@ export default function Home() {
                 >
                   {[
                     { href: 'https://github.com/jackfredericksen', icon: 'github', label: 'GitHub' },
-                    { href: 'https://twitter.com/0xJaxic', icon: 'twitter', label: 'Twitter' },
+                    { href: 'https://twitter.com/', icon: 'twitter', label: 'Twitter' },
                     { href: 'mailto:jackfredericksen.eth@ethermail.io', icon: 'email', label: 'Email' },
                   ].map((social, index) => (
                     <motion.a
