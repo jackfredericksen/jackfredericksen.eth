@@ -29,13 +29,15 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera>()
   const frameRef = useRef<number>()
   
-  const [selectedItem, setSelectedItem] = useState<MoodboardItem | null>(null)
+  const [focusedItem, setFocusedItem] = useState<MoodboardItem | null>(null)
   const [isInteracting, setIsInteracting] = useState(false)
-  const [filter, setFilter] = useState<string>('all')
-  const [cameraMode, setCameraMode] = useState<'orbit' | 'free'>('free')
+  const [isTransitioning, setIsTransitioning] = useState(false)
   
   const itemMeshes = useRef<THREE.Group[]>([])
   const particleSystem = useRef<THREE.Points>()
+  const focusTarget = useRef<THREE.Vector3>(new THREE.Vector3())
+  const originalCameraPosition = useRef<THREE.Vector3>(new THREE.Vector3())
+  const focusedObject = useRef<THREE.Group | null>(null)
   
   const mouse = useRef(new THREE.Vector2())
   const raycaster = useRef(new THREE.Raycaster())
@@ -44,11 +46,6 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
   const velocity = useRef(new THREE.Vector3())
   const direction = useRef(new THREE.Vector3())
   const previousMousePosition = useRef({ x: 0, y: 0 })
-
-  // Filter items
-  const filteredItems = filter === 'all' 
-    ? items 
-    : items.filter(item => item.type === filter)
 
   // Get color from the Tailwind color string or hex
   const getColorFromString = (colorString?: string): number => {
@@ -120,6 +117,7 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
       1000
     )
     camera.position.set(0, 0, 20)
+    originalCameraPosition.current.copy(camera.position)
     cameraRef.current = camera
 
     // Renderer setup
@@ -149,7 +147,7 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
     scene.add(directionalLight)
 
     // Multiple colored lights for ambiance
-    const lights = [
+    const lights: Array<{ color: number; position: [number, number, number]; intensity: number }> = [
       { color: 0x64ffda, position: [-20, 10, 20], intensity: 0.4 },
       { color: 0xff6b6b, position: [20, -10, -20], intensity: 0.3 },
       { color: 0x4ecdc4, position: [0, 20, 0], intensity: 0.3 },
@@ -171,7 +169,7 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
   const createParticleSystem = () => {
     if (!sceneRef.current) return
 
-    const particleCount = 1200
+    const particleCount = 800
     const particles = new THREE.BufferGeometry()
     const positions = new Float32Array(particleCount * 3)
     const colors = new Float32Array(particleCount * 3)
@@ -182,7 +180,7 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
       positions[i + 2] = (Math.random() - 0.5) * 120
 
       const color = new THREE.Color()
-      color.setHSL(Math.random() * 0.4 + 0.5, 0.6, 0.4)
+      color.setHSL(Math.random() * 0.4 + 0.5, 0.6, 0.3)
       colors[i] = color.r
       colors[i + 1] = color.g
       colors[i + 2] = color.b
@@ -192,10 +190,10 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
     particles.setAttribute('color', new THREE.BufferAttribute(colors, 3))
 
     const particleMaterial = new THREE.PointsMaterial({
-      size: 1.2,
+      size: 1.0,
       vertexColors: true,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.5,
       sizeAttenuation: true
     })
 
@@ -214,11 +212,11 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
     })
     itemMeshes.current = []
     
-    filteredItems.forEach((item, index) => {
+    items.forEach((item, index) => {
       const group = new THREE.Group()
       group.userData = { type: 'moodboard', data: item }
 
-      const position = getItemPosition(index, filteredItems.length)
+      const position = getItemPosition(index, items.length)
       const color = getColorFromString(item.color)
       const sizeMultiplier = getSizeMultiplier(item.size)
       
@@ -228,7 +226,6 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
 
       switch (item.type) {
         case 'quote':
-          // Speech bubble shape for quotes
           geometry = new THREE.SphereGeometry(1.2 * sizeMultiplier, 16, 16)
           material = new THREE.MeshPhongMaterial({
             color: color,
@@ -239,7 +236,6 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
           break
           
         case 'link':
-          // Cube with rounded edges for links
           geometry = new THREE.BoxGeometry(
             1.8 * sizeMultiplier, 
             1.2 * sizeMultiplier, 
@@ -253,7 +249,6 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
           break
           
         case 'image':
-          // Plane for images
           geometry = new THREE.PlaneGeometry(
             2 * sizeMultiplier, 
             1.5 * sizeMultiplier
@@ -266,7 +261,6 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
           break
           
         default: // text
-          // Cylinder for text notes
           geometry = new THREE.CylinderGeometry(
             0.8 * sizeMultiplier, 
             0.8 * sizeMultiplier, 
@@ -287,65 +281,33 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
 
       // Add wireframe overlay
       const wireframe = new THREE.WireframeGeometry(geometry)
-      const line = new THREE.LineSegments(wireframe, new THREE.LineBasicMaterial({
+      const wireframeMesh = new THREE.LineSegments(wireframe, new THREE.LineBasicMaterial({
         color: 0xffffff,
         transparent: true,
         opacity: 0.2
       }))
-      group.add(line)
+      group.add(wireframeMesh)
 
-      // Create text label
+      // Create simple label (just title)
       const canvas = document.createElement('canvas')
       const context = canvas.getContext('2d')!
       canvas.width = 512
-      canvas.height = 256
+      canvas.height = 128
       
-      // Background
       context.fillStyle = 'rgba(0, 0, 0, 0.8)'
       context.fillRect(0, 0, canvas.width, canvas.height)
       
-      // Title
       context.fillStyle = '#ffffff'
-      context.font = 'bold 28px Arial'
+      context.font = 'bold 32px Arial'
       context.textAlign = 'center'
       const title = item.title || item.type.charAt(0).toUpperCase() + item.type.slice(1)
-      context.fillText(title.substring(0, 25), 256, 80)
-      
-      // Content preview
-      context.fillStyle = '#cccccc'
-      context.font = '18px Arial'
-      const preview = item.content.substring(0, 60) + (item.content.length > 60 ? '...' : '')
-      
-      // Word wrap
-      const words = preview.split(' ')
-      let line = ''
-      let y = 120
-      
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' '
-        if (context.measureText(testLine).width > 450 && n > 0) {
-          context.fillText(line, 256, y)
-          line = words[n] + ' '
-          y += 25
-          if (y > 200) break
-        } else {
-          line = testLine
-        }
-      }
-      context.fillText(line, 256, y)
-      
-      // Author (for quotes)
-      if (item.type === 'quote' && item.author) {
-        context.fillStyle = '#64ffda'
-        context.font = 'italic 16px Arial'
-        context.fillText(`— ${item.author}`, 256, y + 30)
-      }
+      context.fillText(title.substring(0, 20), 256, 70)
 
       const texture = new THREE.CanvasTexture(canvas)
       const labelMaterial = new THREE.SpriteMaterial({ map: texture })
       const label = new THREE.Sprite(labelMaterial)
-      label.scale.set(4, 2, 1)
-      label.position.set(0, 2.5 * sizeMultiplier, 0)
+      label.scale.set(3, 0.75, 1)
+      label.position.set(0, 2 * sizeMultiplier, 0)
       group.add(label)
 
       // Position the group
@@ -353,17 +315,89 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
       
       // Add floating animation offset
       group.userData.floatOffset = Math.random() * Math.PI * 2
-      group.userData.floatSpeed = 0.5 + Math.random() * 0.5
+      group.userData.floatSpeed = 0.3 + Math.random() * 0.3
       group.userData.originalY = position[1]
+      group.userData.originalPosition = new THREE.Vector3(...position)
 
       sceneRef.current?.add(group)
       itemMeshes.current.push(group)
     })
-  }, [filteredItems])
+  }, [items])
 
-  // Free camera movement
+  // Focus on an object (camera movement)
+  const focusOnObject = useCallback((object: THREE.Group, item: MoodboardItem) => {
+    if (!cameraRef.current || isTransitioning) return
+    
+    setIsTransitioning(true)
+    setFocusedItem(item)
+    focusedObject.current = object
+    
+    // Calculate focus position (in front of the object)
+    const objectPosition = object.position.clone()
+    const focusDistance = 8
+    const direction = new THREE.Vector3(0, 0, 1)
+    focusTarget.current.copy(objectPosition).add(direction.multiplyScalar(focusDistance))
+    
+    // Store original camera position if not already focused
+    if (!focusedItem) {
+      originalCameraPosition.current.copy(cameraRef.current.position)
+    }
+    
+    // Animate camera to focus position
+    const startPosition = cameraRef.current.position.clone()
+    const startTime = Date.now()
+    const duration = 1500
+    
+    const animateToFocus = () => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3) // ease out cubic
+      
+      cameraRef.current!.position.lerpVectors(startPosition, focusTarget.current, eased)
+      cameraRef.current!.lookAt(objectPosition)
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateToFocus)
+      } else {
+        setIsTransitioning(false)
+      }
+    }
+    
+    animateToFocus()
+  }, [focusedItem, isTransitioning])
+
+  // Return to free exploration
+  const exitFocus = useCallback(() => {
+    if (!cameraRef.current || isTransitioning) return
+    
+    setIsTransitioning(true)
+    
+    const startPosition = cameraRef.current.position.clone()
+    const startTime = Date.now()
+    const duration = 1000
+    
+    const animateToOriginal = () => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      
+      cameraRef.current!.position.lerpVectors(startPosition, originalCameraPosition.current, eased)
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateToOriginal)
+      } else {
+        setIsTransitioning(false)
+        setFocusedItem(null)
+        focusedObject.current = null
+      }
+    }
+    
+    animateToOriginal()
+  }, [isTransitioning])
+
+  // Free camera movement (when not focused)
   const updateCamera = useCallback(() => {
-    if (!cameraRef.current) return
+    if (!cameraRef.current || focusedItem || isTransitioning) return
 
     const camera = cameraRef.current
     const speed = keys.current.shift ? 0.5 : 0.2
@@ -397,7 +431,7 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
     if (keys.current.shift) {
       camera.position.y -= speed * 0.5
     }
-  }, [])
+  }, [focusedItem, isTransitioning])
 
   // Mouse look for free camera
   const onMouseMove = useCallback((event: MouseEvent) => {
@@ -407,12 +441,11 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
     mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
     mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
 
-    // Free camera mouse look
-    if (cameraMode === 'free' && isMouseDown.current) {
+    // Free camera mouse look (only when not focused)
+    if (!focusedItem && !isTransitioning && isMouseDown.current) {
       const deltaX = event.clientX - previousMousePosition.current.x
       const deltaY = event.clientY - previousMousePosition.current.y
 
-      // Rotate camera based on mouse movement
       const euler = new THREE.Euler(0, 0, 0, 'YXZ')
       euler.setFromQuaternion(cameraRef.current.quaternion)
       euler.y -= deltaX * 0.002
@@ -422,7 +455,7 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
     }
 
     previousMousePosition.current = { x: event.clientX, y: event.clientY }
-  }, [cameraMode])
+  }, [focusedItem, isTransitioning])
 
   const onMouseDown = useCallback(() => {
     isMouseDown.current = true
@@ -434,9 +467,9 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
     setIsInteracting(false)
   }, [])
 
-  // Handle clicks for selection
+  // Handle clicks for selection/focus
   const onClick = useCallback(() => {
-    if (!cameraRef.current || !sceneRef.current || !raycaster.current) return
+    if (!cameraRef.current || !sceneRef.current || !raycaster.current || isTransitioning) return
 
     raycaster.current.setFromCamera(mouse.current, cameraRef.current)
     
@@ -451,12 +484,10 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
         parent = parent.parent
       }
       if (parent?.userData.data) {
-        setSelectedItem(parent.userData.data)
+        focusOnObject(parent as THREE.Group, parent.userData.data)
       }
-    } else {
-      setSelectedItem(null)
     }
-  }, [])
+  }, [focusOnObject, isTransitioning])
 
   // Keyboard controls
   const onKeyDown = useCallback((event: KeyboardEvent) => {
@@ -467,11 +498,11 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
       case 'KeyD': keys.current.d = true; break
       case 'Space': keys.current.space = true; event.preventDefault(); break
       case 'ShiftLeft': keys.current.shift = true; break
-      case 'KeyC': 
-        setCameraMode(prev => prev === 'free' ? 'orbit' : 'free')
+      case 'Escape': 
+        if (focusedItem) exitFocus()
         break
     }
-  }, [])
+  }, [focusedItem, exitFocus])
 
   const onKeyUp = useCallback((event: KeyboardEvent) => {
     switch (event.code) {
@@ -490,49 +521,65 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
 
     const time = Date.now() * 0.001
 
-    // Update camera movement
+    // Update camera movement (only when not focused)
     updateCamera()
 
     // Animate moodboard items
     itemMeshes.current.forEach((group, index) => {
-      // Floating animation
+      // Floating animation (reduced when focused)
       const floatOffset = group.userData.floatOffset
       const floatSpeed = group.userData.floatSpeed
       const originalY = group.userData.originalY
+      const floatIntensity = focusedItem ? 0.1 : 0.5
       
-      group.position.y = originalY + Math.sin(time * floatSpeed + floatOffset) * 0.5
+      group.position.y = originalY + Math.sin(time * floatSpeed + floatOffset) * floatIntensity
 
       // Gentle rotation
       const mesh = group.children[0]
       if (mesh) {
-        mesh.rotation.x = Math.sin(time * 0.3 + index) * 0.1
-        mesh.rotation.y = time * 0.2 + index
-        mesh.rotation.z = Math.cos(time * 0.4 + index) * 0.05
+        const rotationSpeed = focusedItem ? 0.1 : 0.3
+        mesh.rotation.x = Math.sin(time * rotationSpeed + index) * 0.05
+        mesh.rotation.y = time * rotationSpeed + index
+        mesh.rotation.z = Math.cos(time * rotationSpeed + index) * 0.02
       }
 
-      // Scale pulsing for selected item
-      if (selectedItem && group.userData.data.id === selectedItem.id) {
-        const scale = 1 + Math.sin(time * 4) * 0.1
+      // Highlight focused object
+      if (focusedItem && group.userData.data.id === focusedItem.id) {
+        const scale = 1.2 + Math.sin(time * 2) * 0.1
         group.scale.setScalar(scale)
+        
+        // Enhanced glow effect
+        if (group.children[1]) {
+          (group.children[1] as any).material.opacity = 0.6 + Math.sin(time * 4) * 0.3
+        }
       } else {
         group.scale.setScalar(1)
+        if (group.children[1]) {
+          (group.children[1] as any).material.opacity = 0.2
+        }
       }
     })
 
-    // Animate particles
+    // Animate particles (less active when focused)
     if (particleSystem.current) {
+      const particleSpeed = focusedItem ? 0.1 : 0.5
       const positions = particleSystem.current.geometry.attributes.position.array as Float32Array
       for (let i = 0; i < positions.length; i += 3) {
-        positions[i + 1] += Math.sin(time * 0.5 + positions[i] * 0.02) * 0.002
-        positions[i] += Math.cos(time * 0.3 + positions[i + 2] * 0.02) * 0.001
+        positions[i + 1] += Math.sin(time * particleSpeed + positions[i] * 0.02) * 0.002
+        positions[i] += Math.cos(time * particleSpeed + positions[i + 2] * 0.02) * 0.001
       }
       particleSystem.current.geometry.attributes.position.needsUpdate = true
-      particleSystem.current.rotation.y = time * 0.02
+      particleSystem.current.rotation.y = time * 0.01 * particleSpeed
+      
+      // Fade particles when focused
+      if (particleSystem.current.material) {
+        (particleSystem.current.material as any).opacity = focusedItem ? 0.2 : 0.5
+      }
     }
 
     rendererRef.current.render(sceneRef.current, cameraRef.current)
     frameRef.current = requestAnimationFrame(animate)
-  }, [updateCamera, selectedItem])
+  }, [updateCamera, focusedItem])
 
   // Handle window resize
   const handleResize = useCallback(() => {
@@ -553,7 +600,7 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
 
   useEffect(() => {
     createMoodboardItems()
-  }, [filteredItems, createMoodboardItems])
+  }, [items, createMoodboardItems])
 
   useEffect(() => {
     if (!mountRef.current) return
@@ -596,129 +643,149 @@ const ThreeMoodboard: React.FC<ThreeMoodboardProps> = ({
         style={{ background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%)' }}
       />
       
-      {/* Filter Controls */}
-      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="flex space-x-3 bg-black/30 backdrop-blur-md rounded-full p-2 border border-gray-700/50">
-          {[
-            { key: 'all', label: 'All', icon: '🎨' },
-            { key: 'text', label: 'Ideas', icon: '📝' },
-            { key: 'quote', label: 'Quotes', icon: '💭' },
-            { key: 'link', label: 'Links', icon: '🔗' },
-            { key: 'image', label: 'Images', icon: '🖼️' }
-          ].map((filterOption) => (
-            <button
-              key={filterOption.key}
-              onClick={() => setFilter(filterOption.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                filter === filterOption.key
-                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
-                  : 'text-gray-400 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              {filterOption.icon} {filterOption.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Camera Mode Toggle */}
-      <div className="absolute top-6 right-6 z-10">
-        <button
-          onClick={() => setCameraMode(prev => prev === 'free' ? 'orbit' : 'free')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 bg-black/30 backdrop-blur-md border border-gray-700/50 ${
-            cameraMode === 'free' 
-              ? 'text-cyan-400 border-cyan-500/40' 
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          📹 {cameraMode === 'free' ? 'Free Cam' : 'Orbit Cam'}
-        </button>
-      </div>
-
-      {/* Selected Item Panel */}
+      {/* Focused Item Display */}
       <AnimatePresence>
-        {selectedItem && (
+        {focusedItem && (
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="absolute bottom-6 left-6 max-w-md bg-black/80 backdrop-blur-md rounded-lg p-6 border border-gray-700/50"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={exitFocus}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-bold text-cyan-400">
-                {selectedItem.title || selectedItem.type.charAt(0).toUpperCase() + selectedItem.type.slice(1)}
-              </h3>
-              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded border border-blue-500/30">
-                {selectedItem.type}
-              </span>
-            </div>
-            
-            <div className="text-gray-300 text-sm mb-4 leading-relaxed max-h-32 overflow-y-auto">
-              {selectedItem.type === 'quote' ? (
-                <blockquote className="italic">
-                  "{selectedItem.content}"
-                  {selectedItem.author && (
-                    <footer className="text-cyan-400 mt-2">— {selectedItem.author}</footer>
-                  )}
-                </blockquote>
-              ) : (
-                <p>{selectedItem.content}</p>
-              )}
-            </div>
+            <motion.div
+              className="max-w-4xl max-h-[80vh] bg-black/90 backdrop-blur-md rounded-2xl border border-gray-700/50 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ y: 50 }}
+              animate={{ y: 0 }}
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-gray-700/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">
+                      {focusedItem.title || focusedItem.type.charAt(0).toUpperCase() + focusedItem.type.slice(1)}
+                    </h2>
+                    <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-sm rounded-full border border-cyan-500/30">
+                      {focusedItem.type}
+                    </span>
+                  </div>
+                  <button
+                    onClick={exitFocus}
+                    className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
-            {selectedItem.url && (
-              <a
-                href={selectedItem.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 text-sm rounded border border-cyan-500/30 hover:border-cyan-500/50 transition-all duration-300"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-                Open Link
-              </a>
-            )}
+              {/* Content */}
+              <div className="p-6">
+                {focusedItem.type === 'quote' ? (
+                  <div className="text-center py-8">
+                    <blockquote className="text-2xl text-white italic leading-relaxed mb-6">
+                      "{focusedItem.content}"
+                    </blockquote>
+                    {focusedItem.author && (
+                      <footer className="text-cyan-400 text-lg">— {focusedItem.author}</footer>
+                    )}
+                  </div>
+                ) : focusedItem.type === 'image' ? (
+                  <div className="text-center">
+                    {/* If it's an image URL, show the image */}
+                    {focusedItem.url && (
+                      <img 
+                        src={focusedItem.url} 
+                        alt={focusedItem.title} 
+                        className="max-w-full max-h-96 mx-auto rounded-lg mb-4"
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          (e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    )}
+                    <p className="text-gray-300 leading-relaxed">{focusedItem.content}</p>
+                  </div>
+                ) : (
+                  <div className="prose prose-invert max-w-none">
+                    <p className="text-gray-300 text-lg leading-relaxed whitespace-pre-wrap">
+                      {focusedItem.content}
+                    </p>
+                  </div>
+                )}
+
+                {/* Link button */}
+                {focusedItem.url && (
+                  <div className="mt-6 text-center">
+                    <a
+                      href={focusedItem.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 rounded-lg border border-cyan-500/30 hover:border-cyan-500/50 transition-all duration-300"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                      Open Link
+                    </a>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Controls Instructions */}
+      {/* Minimal Controls UI */}
       <div className="absolute bottom-6 right-6 bg-black/30 backdrop-blur-md rounded-lg p-4 border border-gray-700/50 max-w-xs">
         <h4 className="text-cyan-400 font-semibold mb-2">Controls</h4>
-        {cameraMode === 'free' ? (
+        {focusedItem ? (
           <ul className="text-gray-300 text-sm space-y-1">
-            <li>• WASD: Move around</li>
-            <li>• Mouse: Look around (hold click)</li>
-            <li>• Space: Move up</li>
-            <li>• Shift: Move down</li>
-            <li>• Click: Select items</li>
-            <li>• C: Toggle camera mode</li>
+            <li>• ESC: Exit focus</li>
+            <li>• Click outside: Exit focus</li>
           </ul>
         ) : (
           <ul className="text-gray-300 text-sm space-y-1">
-            <li>• Drag: Rotate view</li>
-            <li>• Click: Select items</li>
-            <li>• C: Toggle camera mode</li>
+            <li>• WASD: Fly around</li>
+            <li>• Mouse: Look around (hold click)</li>
+            <li>• Space: Move up</li>
+            <li>• Shift: Move down</li>
+            <li>• Click object: Focus & explore</li>
           </ul>
         )}
       </div>
 
-      {/* Stats */}
-      <div className="absolute top-20 left-6 bg-black/30 backdrop-blur-md rounded-lg p-3 border border-gray-700/50">
+      {/* Item Counter */}
+      <div className="absolute top-6 left-6 bg-black/30 backdrop-blur-md rounded-lg p-3 border border-gray-700/50">
         <div className="text-sm text-gray-400">
-          <div className="text-cyan-400 font-medium">{filteredItems.length}</div>
-          <div>{filter === 'all' ? 'Total Items' : `${filter} items`}</div>
+          <div className="text-cyan-400 font-medium">{items.length}</div>
+          <div>Items in space</div>
         </div>
       </div>
 
+      {/* Back to exploration hint (when focused) */}
+      {focusedItem && (
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-md rounded-lg px-4 py-2 border border-gray-700/50">
+          <p className="text-gray-300 text-sm">Press ESC or click outside to return to exploration</p>
+        </div>
+      )}
+
       {/* Performance indicator */}
-      {isInteracting && (
+      {isInteracting && !focusedItem && (
         <div className="absolute top-20 right-6 bg-black/50 backdrop-blur-md rounded-lg p-2 border border-gray-700/50">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-gray-300 text-xs">Interactive</span>
+            <span className="text-gray-300 text-xs">Exploring</span>
           </div>
+        </div>
+      )}
+
+      {/* Transition indicator */}
+      {isTransitioning && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
     </div>
